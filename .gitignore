@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+medical.db
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Streamlit config/secrets (optional, uncomment if you put passwords in here)
+# .streamlit/config.toml
+# .streamlit/secrets.toml
