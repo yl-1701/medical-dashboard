@@ -23,18 +23,18 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
     
-    /* Global Font Override & Premium Soft Dark Radial Gradient Background */
+    /* Global Font Override & Premium Soft Cream Radial Gradient Background */
     html, body, [data-testid="stAppViewContainer"], .main {
         font-family: 'Outfit', sans-serif !important;
-        background: radial-gradient(circle at 50% 0%, #1e2942 0%, #0d1321 100%) !important;
-        color: #f1f5f9 !important;
+        background: radial-gradient(circle at 50% 0%, #fbf9f5 0%, #f5eedf 100%) !important;
+        color: #2c241e !important;
     }
     
     /* Title Accent */
     h1 {
         font-family: 'Outfit', sans-serif !important;
         font-weight: 800 !important;
-        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #8c6239 0%, #5c3e21 50%, #2b1a0d 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.02em;
@@ -44,41 +44,44 @@ st.markdown("""
     h2, h3 {
         font-family: 'Outfit', sans-serif !important;
         font-weight: 700 !important;
-        color: #f8fafc !important;
+        color: #2c241e !important;
     }
     
-    /* Sidebar Styling */
+    /* Sidebar Styling (High Contrast Linen White) */
     section[data-testid="stSidebar"] {
-        background-color: #0b1329 !important;
-        border-right: 1px solid #1e293b;
+        background-color: #ffffff !important;
+        border-right: 1px solid #e6dfd3;
     }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        color: #f1f5f9 !important;
+        color: #2c241e !important;
+    }
+    section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
+        color: #2c241e !important;
     }
     
     /* Premium KPI Card styling */
     .kpi-card {
-        background: linear-gradient(145deg, #111a2e 0%, #0d1527 100%);
-        border: 1px solid #1e293b;
+        background-color: #ffffff !important;
+        border: 1px solid #eae2d5 !important;
         border-radius: 16px;
         padding: 24px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 6px -1px rgba(44, 37, 30, 0.05), 0 2px 4px -2px rgba(44, 37, 30, 0.05);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .kpi-card:hover {
         transform: translateY(-5px);
-        border-color: #3b82f6 !important;
-        box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
+        border-color: #c5a880 !important;
+        box-shadow: 0 10px 15px -3px rgba(197, 168, 128, 0.15), 0 4px 6px -2px rgba(197, 168, 128, 0.15);
     }
     .kpi-title {
-        color: #64748b;
+        color: #8c7e72;
         font-size: 0.8rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
     .kpi-value {
-        color: #ffffff !important;
+        color: #2c241e !important;
         font-size: 2.2rem;
         font-weight: 800;
         margin-top: 8px;
@@ -87,24 +90,47 @@ st.markdown("""
     
     /* Live Queue Row Cards */
     .queue-card {
-        background-color: #0e1726 !important;
-        border: 1px solid #1f293d !important;
+        background-color: #ffffff !important;
+        border: 1px solid #eae2d5 !important;
         border-radius: 12px;
         padding: 16px;
         margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 2px 4px rgba(44, 37, 30, 0.02);
         transition: all 0.2s ease;
     }
     .queue-card:hover {
-        background-color: #152035 !important;
-        border-color: #3b82f6 !important;
+        background-color: #faf7f2 !important;
+        border-color: #c5a880 !important;
     }
     
-    /* Streamlit Widget Enhancements */
+    /* Streamlit Widget Enhancements (Ensuring text fields and selectboxes have white background with black/coffee text) */
+    input[type="text"], input[type="password"], input[type="number"], textarea {
+        background-color: #ffffff !important;
+        color: #2c241e !important;
+        border: 1px solid #dfd8cc !important;
+    }
+    
+    /* Dropdown / Selectbox list styling */
+    div[data-baseweb="select"] {
+        background-color: #ffffff !important;
+        color: #2c241e !important;
+    }
+    
+    /* Dropdown menu items */
+    div[role="listbox"] {
+        background-color: #ffffff !important;
+        color: #2c241e !important;
+    }
+    
     div[data-testid="stExpander"] {
-        background-color: #0e1726 !important;
-        border: 1px solid #1f293d !important;
+        background-color: #ffffff !important;
+        border: 1px solid #eae2d5 !important;
         border-radius: 12px !important;
+    }
+    
+    /* Labels, markdown, help texts, and key fields visibility override */
+    .stMarkdown, label, p, span, li {
+        color: #2c241e !important;
     }
     
     /* Custom Scrollbar */
@@ -113,14 +139,14 @@ st.markdown("""
         height: 8px;
     }
     ::-webkit-scrollbar-track {
-        background: #090d16;
+        background: #f5eedf;
     }
     ::-webkit-scrollbar-thumb {
-        background: #1e293b;
+        background: #cbd5e1;
         border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #334155;
+        background: #94a3b8;
     }
     </style>
 
