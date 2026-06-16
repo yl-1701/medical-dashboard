@@ -23,10 +23,10 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
     
-    /* Global Font Override */
+    /* Global Font Override & Soft Radial Gradient Background */
     html, body, [data-testid="stAppViewContainer"], .main {
         font-family: 'Outfit', sans-serif !important;
-        background-color: #090d16 !important;
+        background: radial-gradient(circle at 50% 0%, #1e2942 0%, #0d1321 100%) !important;
         color: #f1f5f9 !important;
     }
     
