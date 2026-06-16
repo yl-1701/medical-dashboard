@@ -205,3 +205,103 @@ def show_payments_page():
             col_paid.metric("Paid", f"${paid_amt:,.2f}")
             col_pend.metric("Pending", f"${pending_amt:,.2f}")
             col_over.metric("Overdue", f"${overdue_amt:,.2f}")
+
+            # 3. Generate Printable Invoice
+            st.write("---")
+            st.subheader("🧾 Generate Patient Invoice / Receipt")
+            
+            with st.expander("Generate Printable Invoice", expanded=False):
+                invoice_options = {
+                    row['payment_id']: f"Inv #{row['payment_id']} - {row['patient_name']} (${row['amount']}) on {row['appointment_date']}"
+                    for _, row in filtered_df.iterrows()
+                }
+                if not invoice_options:
+                    st.info("No transaction records found.")
+                else:
+                    selected_inv_id = st.selectbox(
+                        "Select Payment Record for Invoice",
+                        options=list(invoice_options.keys()),
+                        format_func=lambda x: invoice_options[x]
+                    )
+                    
+                    if selected_inv_id:
+                        inv_data = filtered_df[filtered_df['payment_id'] == selected_inv_id].iloc[0]
+                        status_badge_color = "#28a745" if inv_data['payment_status'] == 'Paid' else "#ffc107" if inv_data['payment_status'] == 'Pending' else "#dc3545"
+                        
+                        invoice_html = f"""
+                        <div style="background-color: #0f172a; padding: 25px; border-radius: 8px; border: 1px solid #334155; color: #f8fafc; font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                            <!-- Header -->
+                            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #334155; padding-bottom: 15px;">
+                                <div>
+                                    <h2 style="margin: 0; color: #3b82f6;">🏥 MEDICARE CLINIC</h2>
+                                    <span style="font-size: 12px; color: #94a3b8;">123 Healthcare Blvd, Suite 100</span><br/>
+                                    <span style="font-size: 12px; color: #94a3b8;">Phone: +1-555-0100 | support@medicare.com</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <h3 style="margin: 0; color: #f8fafc;">INVOICE / RECEIPT</h3>
+                                    <span style="font-size: 13px; color: #94a3b8;"><b>Invoice #:</b> {inv_data['payment_id']}</span><br/>
+                                    <span style="font-size: 13px; color: #94a3b8;"><b>Date:</b> {inv_data['payment_date'] or datetime.now().strftime('%Y-%m-%d')}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Body Info -->
+                            <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h4 style="margin: 0 0 5px 0; color: #94a3b8; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Billed To:</h4>
+                                    <strong style="font-size: 15px;">{inv_data['patient_name']}</strong><br/>
+                                    <span style="font-size: 13px; color: #94a3b8;">Patient ID: {inv_data['appointment_id']}</span>
+                                </div>
+                                <div style="text-align: right; font-size: 13px;">
+                                    <h4 style="margin: 0 0 5px 0; color: #94a3b8; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Service Details:</h4>
+                                    <strong style="font-size: 14px;">{inv_data['doctor_name']}</strong><br/>
+                                    <span style="font-size: 13px; color: #94a3b8;">Date: {inv_data['appointment_date']}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Invoice Table -->
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid #334155;">
+                                        <th style="text-align: left; padding: 10px 0; color: #94a3b8;">Description</th>
+                                        <th style="text-align: right; padding: 10px 0; color: #94a3b8;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #1e293b;">
+                                        <td style="padding: 12px 0;">Consultation Fee / Medical Services</td>
+                                        <td style="text-align: right; padding: 12px 0;">${inv_data['amount']:.2f}</td>
+                                    </tr>
+                                    <tr style="font-weight: bold; border-top: 2px solid #334155;">
+                                        <td style="padding: 12px 0; font-size: 15px;">Total Due</td>
+                                        <td style="text-align: right; padding: 12px 0; font-size: 15px; color: #3b82f6;">${inv_data['amount']:.2f}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <!-- Payment Status Footer -->
+                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background-color: #1e293b; padding: 12px 20px; border-radius: 6px;">
+                                <div>
+                                    <span style="font-size: 12px; color: #94a3b8;">Payment Method</span><br/>
+                                    <strong style="font-size: 14px; color: #f8fafc;">{inv_data['payment_method']}</strong>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 12px; color: #94a3b8;">Status</span><br/>
+                                    <span style="background-color: {status_badge_color}; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                                        {inv_data['payment_status'].upper()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        """
+                        
+                        st.markdown(invoice_html, unsafe_allow_html=True)
+                        st.write("")
+                        
+                        st.download_button(
+                            label="📥 Download Invoice Text / Receipt",
+                            data=f"INVOICE #{inv_data['payment_id']}\nClinic: MediCare\nPatient: {inv_data['patient_name']}\nDoctor: {inv_data['doctor_name']}\nDate: {inv_data['appointment_date']}\nAmount: ${inv_data['amount']:.2f}\nStatus: {inv_data['payment_status']}\nMethod: {inv_data['payment_method']}",
+                            file_name=f"Invoice_{inv_data['payment_id']}_{inv_data['patient_name']}.txt",
+                            mime="text/plain",
+                            use_container_width=True
+                        )
+

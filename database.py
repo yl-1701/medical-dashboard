@@ -467,3 +467,25 @@ def update_payment(payment_id, amount, payment_method, payment_status, payment_d
     except Exception as e:
         return False, str(e)
 
+def add_patient_and_book_appointment(name, age, gender, contact, email, blood_group, history, doctor_id, appt_datetime, notes):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (name, age, gender, contact, email, blood_group, history))
+        patient_id = cursor.lastrowid
+        
+        cursor.execute("""
+            INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes)
+            VALUES (?, ?, ?, 'Scheduled', ?)
+        """, (patient_id, doctor_id, appt_datetime, notes))
+        
+        conn.commit()
+        conn.close()
+        return True, "Patient registered and appointment booked successfully!"
+    except Exception as e:
+        return False, str(e)
+
+

@@ -155,8 +155,11 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
             def color_appt_status(row):
                 color_map = {
                     'Scheduled': 'background-color: rgba(255, 193, 7, 0.2); color: #ffc107; font-weight: bold;',
+                    'Checked-In': 'background-color: rgba(13, 202, 240, 0.2); color: #0dcaf0; font-weight: bold;',
+                    'In Consultation': 'background-color: rgba(111, 66, 193, 0.2); color: #6f42c1; font-weight: bold;',
                     'Completed': 'background-color: rgba(40, 167, 69, 0.2); color: #28a745; font-weight: bold;',
-                    'Cancelled': 'background-color: rgba(220, 53, 69, 0.2); color: #dc3545; font-weight: bold;'
+                    'Cancelled': 'background-color: rgba(220, 53, 69, 0.2); color: #dc3545; font-weight: bold;',
+                    'No-Show': 'background-color: rgba(108, 117, 125, 0.2); color: #6c757d; font-weight: bold;'
                 }
                 status = row['Status']
                 return [color_map.get(status, '') if col == 'Status' else '' for col in row.index]
@@ -204,13 +207,66 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
             
             col_left, col_right = st.columns([2, 1])
             with col_left:
-                st.subheader("📅 Today's Appointments")
+                st.subheader("📅 Today's Live Queue & Agenda")
                 if today_appts.empty:
                     st.info("No appointments scheduled for today.")
                 else:
-                    display_today = today_appts[['appointment_date', 'patient_name', 'doctor_name', 'specialization', 'status']].copy()
-                    display_today.columns = ['Time', 'Patient', 'Doctor', 'Specialization', 'Status']
-                    st.dataframe(display_today, use_container_width=True, hide_index=True)
+                    today_appts_sorted = today_appts.sort_values(by='appointment_date')
+                    for _, row in today_appts_sorted.iterrows():
+                        time_str = row['appointment_date'].split()[-1] if " " in row['appointment_date'] else row['appointment_date']
+                        status_colors = {
+                            'Scheduled': '#ffc107',
+                            'Checked-In': '#0dcaf0',
+                            'In Consultation': '#6f42c1',
+                            'Completed': '#28a745',
+                            'Cancelled': '#dc3545',
+                            'No-Show': '#6c757d'
+                        }
+                        color = status_colors.get(row['status'], '#ffffff')
+                        
+                        with st.container():
+                            c_info, c_action = st.columns([3, 2])
+                            with c_info:
+                                st.markdown(f"""
+                                    <div style="padding: 10px; border-left: 4px solid {color}; background-color: #1e293b; border-radius: 4px; margin-bottom: 8px;">
+                                        <span style="font-size: 14px; font-weight: bold; color: {color};">[{row['status'].upper()}]</span> 
+                                        <span style="font-weight: 600; font-size: 15px; margin-left: 8px;">{row['patient_name']}</span> 
+                                        <span style="color: #94a3b8; font-size: 13px;">(with {row['doctor_name']})</span><br/>
+                                        <span style="font-size: 12px; color: #94a3b8; margin-top: 4px; display: inline-block;">⏰ Time: {time_str} | 📋 Reason: {row['notes'] or 'N/A'}</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            with c_action:
+                                next_statuses = []
+                                if row['status'] == 'Scheduled':
+                                    next_statuses = [('Checked-In', '📌 Check In'), ('No-Show', '❌ No-Show')]
+                                elif row['status'] == 'Checked-In':
+                                    next_statuses = [('In Consultation', '🩺 Send to Doc'), ('No-Show', '❌ No-Show')]
+                                elif row['status'] == 'In Consultation':
+                                    next_statuses = [('Completed', '✅ Complete Visit')]
+                                
+                                cols = st.columns(max(len(next_statuses), 1))
+                                for i, (next_status, label) in enumerate(next_statuses):
+                                    if cols[i].button(label, key=f"status_btn_{row['appointment_id']}_{next_status}"):
+                                        database.update_appointment_status(row['appointment_id'], next_status)
+                                        st.rerun()
+                                        
+                                if not next_statuses:
+                                    all_states = ["Scheduled", "Checked-In", "In Consultation", "Completed", "Cancelled", "No-Show"]
+                                    try:
+                                        curr_idx = all_states.index(row['status'])
+                                    except ValueError:
+                                        curr_idx = 0
+                                    new_state = cols[0].selectbox(
+                                        "Change Status",
+                                        options=all_states,
+                                        index=curr_idx,
+                                        key=f"status_sel_{row['appointment_id']}",
+                                        label_visibility="collapsed"
+                                    )
+                                    if new_state != row['status']:
+                                        database.update_appointment_status(row['appointment_id'], new_state)
+                                        st.rerun()
+                        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
                     
             with col_right:
                 st.subheader("🩺 On-Call Doctors")
@@ -314,17 +370,45 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                         email = st.text_input("Email Address")
                         medical_history = st.text_area("Medical History Notes")
                     
+                    st.write("---")
+                    st.markdown("### 📅 Walk-in Appointment Setup")
+                    book_immediately = st.checkbox("Book an appointment for this patient immediately?")
+                    
+                    col_b1, col_b2 = st.columns(2)
+                    with col_b1:
+                        doc_choices_quick = {row['doctor_id']: f"{row['full_name']} ({row['specialization']})" for _, row in doctors_df.iterrows()}
+                        quick_doctor = st.selectbox("Assign Doctor", options=list(doc_choices_quick.keys()), format_func=lambda x: doc_choices_quick[x] if doc_choices_quick else "")
+                        quick_date = st.date_input("Appointment Date", value=datetime.today())
+                    with col_b2:
+                        quick_time = st.time_input("Appointment Time", value=datetime.now().time())
+                        quick_notes = st.text_input("Reason for Visit", placeholder="e.g. Regular checkup, Follow-up")
+                    
                     submit_btn = st.form_submit_button("Add Patient Record", use_container_width=True)
                     if submit_btn:
                         if not name or not contact:
                             st.error("Full Name and Contact Number are required.")
                         else:
-                            success, msg = database.add_patient(name, age, gender, contact, email, blood_group, medical_history)
-                            if success:
-                                st.success(msg)
-                                st.rerun()
+                            if book_immediately:
+                                if not quick_doctor:
+                                    st.error("Please select a doctor to book the appointment.")
+                                else:
+                                    appt_datetime_str = f"{quick_date.strftime('%Y-%m-%d')} {quick_time.strftime('%H:%M')}"
+                                    success, msg = database.add_patient_and_book_appointment(
+                                        name, age, gender, contact, email, blood_group, medical_history,
+                                        quick_doctor, appt_datetime_str, quick_notes if quick_notes else "Initial Consultation"
+                                    )
+                                    if success:
+                                        st.success("Patient registered and appointment booked successfully!")
+                                        st.rerun()
+                                    else:
+                                        st.error(msg)
                             else:
-                                st.error(f"Error: {msg}")
+                                success, msg = database.add_patient(name, age, gender, contact, email, blood_group, medical_history)
+                                if success:
+                                    st.success(msg)
+                                    st.rerun()
+                                else:
+                                    st.error(f"Error: {msg}")
 
             with tab_edit_p:
                 st.subheader("Edit Patient Information")
@@ -388,7 +472,7 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
             with col_f1:
                 sel_doctor = st.selectbox("Filter by Doctor", options=list(doc_options.keys()), format_func=lambda x: doc_options[x])
             with col_f2:
-                sel_status = st.multiselect("Filter by Status", ["Scheduled", "Completed", "Cancelled"], default=["Scheduled", "Completed", "Cancelled"])
+                sel_status = st.multiselect("Filter by Status", ["Scheduled", "Checked-In", "In Consultation", "Completed", "Cancelled", "No-Show"], default=["Scheduled", "Checked-In", "In Consultation", "Completed", "Cancelled", "No-Show"])
             
             filtered_appts = appointments_df.copy()
             if sel_doctor != "All":
@@ -520,7 +604,7 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                             with col2_e:
                                 appt_time_edit = st.time_input("Time", value=curr_time)
                                 
-                            status_options = ["Scheduled", "Completed", "Cancelled"]
+                            status_options = ["Scheduled", "Checked-In", "In Consultation", "Completed", "Cancelled", "No-Show"]
                             try:
                                 status_idx = status_options.index(appt_details['status'])
                             except ValueError:
