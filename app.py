@@ -23,18 +23,18 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
     
-    /* Global Font Override & Premium Soft Beige Radial Gradient Background */
+    /* Global Font Override & Premium Soft Dark Radial Gradient Background */
     html, body, [data-testid="stAppViewContainer"], .main {
         font-family: 'Outfit', sans-serif !important;
-        background: radial-gradient(circle at 50% 0%, #f7f3eb 0%, #eae3d2 100%) !important;
-        color: #2c251e !important;
+        background: radial-gradient(circle at 50% 0%, #1e2942 0%, #0d1321 100%) !important;
+        color: #f1f5f9 !important;
     }
     
     /* Title Accent */
     h1 {
         font-family: 'Outfit', sans-serif !important;
         font-weight: 800 !important;
-        background: linear-gradient(135deg, #8c6239 0%, #5c3e21 50%, #3a2512 100%);
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.02em;
@@ -44,41 +44,41 @@ st.markdown("""
     h2, h3 {
         font-family: 'Outfit', sans-serif !important;
         font-weight: 700 !important;
-        color: #2c251e !important;
+        color: #f8fafc !important;
     }
     
     /* Sidebar Styling */
     section[data-testid="stSidebar"] {
-        background-color: #fbf9f6 !important;
-        border-right: 1px solid #e3ddd3;
+        background-color: #0b1329 !important;
+        border-right: 1px solid #1e293b;
     }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        color: #2c251e !important;
+        color: #f1f5f9 !important;
     }
     
     /* Premium KPI Card styling */
     .kpi-card {
-        background-color: #ffffff !important;
-        border: 1px solid #e8e2d5 !important;
+        background: linear-gradient(145deg, #111a2e 0%, #0d1527 100%);
+        border: 1px solid #1e293b;
         border-radius: 16px;
         padding: 24px;
-        box-shadow: 0 4px 6px -1px rgba(44, 37, 30, 0.04), 0 2px 4px -2px rgba(44, 37, 30, 0.04);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .kpi-card:hover {
         transform: translateY(-5px);
-        border-color: #c5a880 !important;
-        box-shadow: 0 10px 15px -3px rgba(197, 168, 128, 0.2), 0 4px 6px -2px rgba(197, 168, 128, 0.2);
+        border-color: #3b82f6 !important;
+        box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
     }
     .kpi-title {
-        color: #8c7f73;
+        color: #64748b;
         font-size: 0.8rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
     .kpi-value {
-        color: #2c251e !important;
+        color: #ffffff !important;
         font-size: 2.2rem;
         font-weight: 800;
         margin-top: 8px;
@@ -87,23 +87,23 @@ st.markdown("""
     
     /* Live Queue Row Cards */
     .queue-card {
-        background-color: #ffffff !important;
-        border: 1px solid #e8e2d5 !important;
+        background-color: #0e1726 !important;
+        border: 1px solid #1f293d !important;
         border-radius: 12px;
         padding: 16px;
         margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(44, 37, 30, 0.02);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         transition: all 0.2s ease;
     }
     .queue-card:hover {
-        background-color: #fbf9f6 !important;
-        border-color: #c5a880 !important;
+        background-color: #152035 !important;
+        border-color: #3b82f6 !important;
     }
     
     /* Streamlit Widget Enhancements */
     div[data-testid="stExpander"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e8e2d5 !important;
+        background-color: #0e1726 !important;
+        border: 1px solid #1f293d !important;
         border-radius: 12px !important;
     }
     
@@ -113,14 +113,14 @@ st.markdown("""
         height: 8px;
     }
     ::-webkit-scrollbar-track {
-        background: #eae3d2;
+        background: #090d16;
     }
     ::-webkit-scrollbar-thumb {
-        background: #c5a880;
+        background: #1e293b;
         border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #a88d67;
+        background: #334155;
     }
     </style>
 
