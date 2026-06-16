@@ -229,63 +229,63 @@ def show_payments_page():
                         status_badge_color = "#28a745" if inv_data['payment_status'] == 'Paid' else "#ffc107" if inv_data['payment_status'] == 'Pending' else "#dc3545"
                         
                         invoice_html = f"""
-                        <div style="background-color: #0f172a; padding: 25px; border-radius: 8px; border: 1px solid #334155; color: #f8fafc; font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                        <div style="background-color: #ffffff; padding: 25px; border-radius: 8px; border: 1px solid #eae2d5; color: #2c241e; font-family: sans-serif; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(44, 37, 30, 0.05);">
                             <!-- Header -->
-                            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #334155; padding-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #eae2d5; padding-bottom: 15px;">
                                 <div>
-                                    <h2 style="margin: 0; color: #3b82f6;">🏥 MEDICARE CLINIC</h2>
-                                    <span style="font-size: 12px; color: #94a3b8;">123 Healthcare Blvd, Suite 100</span><br/>
-                                    <span style="font-size: 12px; color: #94a3b8;">Phone: +1-555-0100 | support@medicare.com</span>
+                                    <h2 style="margin: 0; color: #8c6239;">🏥 MEDICARE CLINIC</h2>
+                                    <span style="font-size: 12px; color: #8c7e72;">123 Healthcare Blvd, Suite 100</span><br/>
+                                    <span style="font-size: 12px; color: #8c7e72;">Phone: +1-555-0100 | support@medicare.com</span>
                                 </div>
                                 <div style="text-align: right;">
-                                    <h3 style="margin: 0; color: #f8fafc;">INVOICE / RECEIPT</h3>
-                                    <span style="font-size: 13px; color: #94a3b8;"><b>Invoice #:</b> {inv_data['payment_id']}</span><br/>
-                                    <span style="font-size: 13px; color: #94a3b8;"><b>Date:</b> {inv_data['payment_date'] or datetime.now().strftime('%Y-%m-%d')}</span>
+                                    <h3 style="margin: 0; color: #2c241e;">INVOICE / RECEIPT</h3>
+                                    <span style="font-size: 13px; color: #8c7e72;"><b>Invoice #:</b> {inv_data['payment_id']}</span><br/>
+                                    <span style="font-size: 13px; color: #8c7e72;"><b>Date:</b> {inv_data['payment_date'] or datetime.now().strftime('%Y-%m-%d')}</span>
                                 </div>
                             </div>
                             
                             <!-- Body Info -->
                             <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                                 <div>
-                                    <h4 style="margin: 0 0 5px 0; color: #94a3b8; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Billed To:</h4>
+                                    <h4 style="margin: 0 0 5px 0; color: #8c7e72; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Billed To:</h4>
                                     <strong style="font-size: 15px;">{inv_data['patient_name']}</strong><br/>
-                                    <span style="font-size: 13px; color: #94a3b8;">Patient ID: {inv_data['appointment_id']}</span>
+                                    <span style="font-size: 13px; color: #8c7e72;">Patient ID: {inv_data['appointment_id']}</span>
                                 </div>
                                 <div style="text-align: right; font-size: 13px;">
-                                    <h4 style="margin: 0 0 5px 0; color: #94a3b8; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Service Details:</h4>
+                                    <h4 style="margin: 0 0 5px 0; color: #8c7e72; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Service Details:</h4>
                                     <strong style="font-size: 14px;">{inv_data['doctor_name']}</strong><br/>
-                                    <span style="font-size: 13px; color: #94a3b8;">Date: {inv_data['appointment_date']}</span>
+                                    <span style="font-size: 13px; color: #8c7e72;">Date: {inv_data['appointment_date']}</span>
                                 </div>
                             </div>
                             
                             <!-- Invoice Table -->
                             <table style="width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px;">
                                 <thead>
-                                    <tr style="border-bottom: 2px solid #334155;">
-                                        <th style="text-align: left; padding: 10px 0; color: #94a3b8;">Description</th>
-                                        <th style="text-align: right; padding: 10px 0; color: #94a3b8;">Amount</th>
+                                    <tr style="border-bottom: 2px solid #eae2d5;">
+                                        <th style="text-align: left; padding: 10px 0; color: #8c7e72;">Description</th>
+                                        <th style="text-align: right; padding: 10px 0; color: #8c7e72;">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr style="border-bottom: 1px solid #1e293b;">
+                                    <tr style="border-bottom: 1px solid #eae2d5;">
                                         <td style="padding: 12px 0;">Consultation Fee / Medical Services</td>
                                         <td style="text-align: right; padding: 12px 0;">${inv_data['amount']:.2f}</td>
                                     </tr>
-                                    <tr style="font-weight: bold; border-top: 2px solid #334155;">
+                                    <tr style="font-weight: bold; border-top: 2px solid #eae2d5;">
                                         <td style="padding: 12px 0; font-size: 15px;">Total Due</td>
-                                        <td style="text-align: right; padding: 12px 0; font-size: 15px; color: #3b82f6;">${inv_data['amount']:.2f}</td>
+                                        <td style="text-align: right; padding: 12px 0; font-size: 15px; color: #8c6239;">${inv_data['amount']:.2f}</td>
                                     </tr>
                                 </tbody>
                             </table>
                             
                             <!-- Payment Status Footer -->
-                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background-color: #1e293b; padding: 12px 20px; border-radius: 6px;">
+                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background-color: #faf7f2; padding: 12px 20px; border-radius: 6px; border: 1px solid #eae2d5;">
                                 <div>
-                                    <span style="font-size: 12px; color: #94a3b8;">Payment Method</span><br/>
-                                    <strong style="font-size: 14px; color: #f8fafc;">{inv_data['payment_method']}</strong>
+                                    <span style="font-size: 12px; color: #8c7e72;">Payment Method</span><br/>
+                                    <strong style="font-size: 14px; color: #2c241e;">{inv_data['payment_method']}</strong>
                                 </div>
                                 <div style="text-align: right;">
-                                    <span style="font-size: 12px; color: #94a3b8;">Status</span><br/>
+                                    <span style="font-size: 12px; color: #8c7e72;">Status</span><br/>
                                     <span style="background-color: {status_badge_color}; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">
                                         {inv_data['payment_status'].upper()}
                                     </span>

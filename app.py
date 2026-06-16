@@ -190,6 +190,25 @@ st.markdown("""
         color: #2c241e !important;
     }
     
+    /* Header (Top Bar) override to match light theme */
+    header[data-testid="stHeader"] {
+        background-color: rgba(251, 249, 245, 0.9) !important;
+        backdrop-filter: blur(8px) !important;
+        border-bottom: 1px solid #e6dfd3 !important;
+    }
+    header[data-testid="stHeader"] button, header[data-testid="stHeader"] a, header[data-testid="stHeader"] svg {
+        color: #2c241e !important;
+        fill: #2c241e !important;
+    }
+    
+    /* Dataframe wrapper border */
+    div[data-testid="stDataFrame"], div[data-testid="stTable"] {
+        border: 1px solid #eae2d5 !important;
+        border-radius: 12px !important;
+        background-color: #ffffff !important;
+        padding: 4px;
+    }
+    
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
         width: 8px;
