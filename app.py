@@ -151,9 +151,31 @@ st.markdown("""
         color: #2c241e !important;
     }
     
-    /* Dropdown menu items */
-    div[role="listbox"] {
+    /* Dropdown menu items & outer popover containers (crucial for Streamlit popovers) */
+    div[role="listbox"], [data-baseweb="popover"], [data-baseweb="menu"], [data-baseweb="popover"] ul {
         background-color: #ffffff !important;
+        color: #2c241e !important;
+        border: 1px solid #eae2d5 !important;
+    }
+    
+    li[role="option"], div[role="option"], [data-baseweb="menu"] li, [data-baseweb="popover"] li {
+        background-color: #ffffff !important;
+        color: #2c241e !important;
+    }
+    
+    li[role="option"]:hover, div[role="option"]:hover, [data-baseweb="menu"] li:hover, [data-baseweb="popover"] li:hover {
+        background-color: #f5eedf !important;
+        color: #8c6239 !important;
+    }
+    
+    /* Multiselect tags / pills override */
+    span[data-baseweb="tag"] {
+        background-color: #eae3d2 !important; /* Soft cream/sand tag background */
+        color: #2c241e !important;             /* Dark coffee text */
+        border: 1px solid #dfd8cc !important;
+    }
+    
+    span[data-baseweb="tag"] button {
         color: #2c241e !important;
     }
     
