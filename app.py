@@ -21,65 +21,102 @@ st.set_page_config(
 # Custom premium styling using CSS
 st.markdown("""
     <style>
-    /* Main styling */
-    .main {
-        background-color: #0f172a;
-        color: #f8fafc;
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+    
+    /* Global Font Override */
+    html, body, [data-testid="stAppViewContainer"], .main {
+        font-family: 'Outfit', sans-serif !important;
+        background-color: #090d16 !important;
+        color: #f1f5f9 !important;
     }
     
-    /* Sidebar styling */
+    /* Title Accent */
+    h1 {
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 800 !important;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.02em;
+    }
+    
+    /* Section Headers */
+    h2, h3 {
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 700 !important;
+        color: #f8fafc !important;
+    }
+    
+    /* Sidebar Styling */
     section[data-testid="stSidebar"] {
-        background-color: #1e293b;
+        background-color: #0b1329 !important;
+        border-right: 1px solid #1e293b;
     }
     
-    /* KPI Card styling */
+    /* Premium KPI Card styling */
     .kpi-card {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        transition: transform 0.2s ease-in-out;
+        background: linear-gradient(145deg, #111a2e 0%, #0d1527 100%);
+        border: 1px solid #1e293b;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .kpi-card:hover {
-        transform: translateY(-4px);
+        transform: translateY(-5px);
         border-color: #3b82f6;
+        box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
     }
     .kpi-title {
-        color: #94a3b8;
-        font-size: 0.875rem;
-        font-weight: 500;
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
     }
     .kpi-value {
-        color: #f8fafc;
-        font-size: 2rem;
-        font-weight: 700;
+        color: #ffffff;
+        font-size: 2.2rem;
+        font-weight: 800;
         margin-top: 8px;
+        letter-spacing: -0.03em;
     }
     
-    /* Status Badge Stylings */
-    .status-completed {
-        background-color: rgba(34, 197, 94, 0.2);
-        color: #22c55e;
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-weight: bold;
+    /* Live Queue Row Cards */
+    .queue-row {
+        background-color: #0e1726;
+        border: 1px solid #1f293d;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease;
     }
-    .status-pending {
-        background-color: rgba(245, 158, 11, 0.2);
-        color: #f59e0b;
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-weight: bold;
+    .queue-row:hover {
+        background-color: #152035;
+        border-color: #3b82f6;
     }
-    .status-cancelled {
-        background-color: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-weight: bold;
+    
+    /* Streamlit Widget Enhancements */
+    div[data-testid="stExpander"] {
+        background-color: #0e1726 !important;
+        border: 1px solid #1f293d !important;
+        border-radius: 12px !important;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
     }
     </style>
 """, unsafe_allow_html=True)
