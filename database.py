@@ -256,7 +256,46 @@ def update_appointment(appointment_id, doctor_id, appt_datetime, status, notes):
     except Exception as e:
         return False, str(e)
 
+def auto_update_no_shows():
+    """Automatically update Scheduled appointments to No-Show if they are past 15 minutes of slot time."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Get all Scheduled appointments
+        cursor.execute("SELECT appointment_id, appointment_date FROM appointments WHERE status = 'Scheduled'")
+        rows = cursor.fetchall()
+        
+        now = datetime.now()
+        updated_any = False
+        
+        for row in rows:
+            appt_id = row['appointment_id']
+            appt_date_str = row['appointment_date']
+            try:
+                # Format: YYYY-MM-DD HH:MM
+                appt_dt = datetime.strptime(appt_date_str, "%Y-%m-%d %H:%M")
+            except ValueError:
+                try:
+                    # Fallback for YYYY-MM-DD
+                    appt_dt = datetime.strptime(appt_date_str.split()[0], "%Y-%m-%d")
+                except:
+                    continue
+            
+            # Check if 15 minutes have passed since the slot start time
+            if now > appt_dt + timedelta(minutes=15):
+                cursor.execute("UPDATE appointments SET status = 'No-Show' WHERE appointment_id = ?", (appt_id,))
+                updated_any = True
+                
+        if updated_any:
+            conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        return False
+
 def get_all_appointments_detailed():
+    auto_update_no_shows()
     conn = get_connection()
     query = """
         SELECT a.appointment_id, a.appointment_date, a.status, a.notes,
@@ -270,6 +309,7 @@ def get_all_appointments_detailed():
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
+
 
 # --- Payment Database Queries ---
 def get_all_payments_detailed():
