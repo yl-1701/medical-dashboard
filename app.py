@@ -110,6 +110,41 @@ st.markdown("""
         border: 1px solid #dfd8cc !important;
     }
     
+    /* Buttons Override (Forms and Standard Buttons) */
+    .stButton > button, button[kind="primaryFormSubmit"], button[kind="secondaryFormSubmit"] {
+        background-color: #8c6239 !important; /* Rich Warm Bronze */
+        color: #ffffff !important;           /* High Contrast White Text */
+        border: 1px solid #704d2b !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }
+    .stButton > button:hover, button[kind="primaryFormSubmit"]:hover, button[kind="secondaryFormSubmit"]:hover {
+        background-color: #704d2b !important; /* Slightly darker on hover */
+        color: #ffffff !important;
+        border-color: #5c3e21 !important;
+    }
+    
+    /* Secondary/Default Streamlit Button styling (like "New Patient?") */
+    button[kind="secondary"] {
+        background-color: #ffffff !important;
+        color: #2c241e !important;
+        border: 1px solid #dfd8cc !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+    }
+    button[kind="secondary"]:hover {
+        background-color: #faf7f2 !important;
+        border-color: #c5a880 !important;
+        color: #2c241e !important;
+    }
+    
+    /* Password Visibility Eye Icon Container Override */
+    div[data-testid="stTextInput"] button, div[data-baseui="input"] button {
+        background-color: transparent !important;
+        color: #2c241e !important;
+    }
+    
     /* Dropdown / Selectbox list styling */
     div[data-baseweb="select"] {
         background-color: #ffffff !important;

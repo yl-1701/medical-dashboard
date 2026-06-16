@@ -48,7 +48,7 @@ def show_login_screen():
     st.markdown("""
         <div style='text-align: center; margin-bottom: 2rem;'>
             <h2>🏥 MediCare Hub Portal</h2>
-            <p style='color: #94a3b8;'>Please sign in to access your dashboard</p>
+            <p style='color: #8c7e72;'>Please sign in to access your dashboard</p>
         </div>
     """, unsafe_allow_html=True)
     
@@ -92,7 +92,7 @@ def show_register_screen():
     st.markdown("""
         <div style='text-align: center; margin-bottom: 2rem;'>
             <h2>📝 Patient Registration</h2>
-            <p style='color: #94a3b8;'>Register to schedule appointments and view your medical records</p>
+            <p style='color: #8c7e72;'>Register to schedule appointments and view your medical records</p>
         </div>
     """, unsafe_allow_html=True)
 
