@@ -380,6 +380,31 @@ def update_last_login(user_id, time_str):
     except Exception as e:
         return False
 
+def update_username_and_password(user_id, new_username, new_password_hash=None):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        if new_password_hash:
+            cursor.execute("""
+                UPDATE users
+                SET username = ?, password_hash = ?
+                WHERE user_id = ?
+            """, (new_username, new_password_hash, user_id))
+        else:
+            cursor.execute("""
+                UPDATE users
+                SET username = ?
+                WHERE user_id = ?
+            """, (new_username, user_id))
+        conn.commit()
+        conn.close()
+        return True, "Profile details updated successfully!"
+    except sqlite3.IntegrityError:
+        return False, "Username already exists. Please choose a different one."
+    except Exception as e:
+        return False, str(e)
+
+
 def create_user_and_patient(username, password_hash, full_name, age, gender, contact, email, blood_group, medical_history):
     try:
         conn = get_connection()

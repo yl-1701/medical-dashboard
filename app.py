@@ -271,7 +271,7 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
     if user_role == "admin":
         page = st.sidebar.radio(
             "Navigation Menu",
-            ["Home", "Patients", "Appointments", "Payments", "Analytics"]
+            ["Home", "Patients", "Appointments", "Payments", "Analytics", "Settings"]
         )
     else:
         page = st.sidebar.radio(
@@ -821,6 +821,46 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                 fig_pie = px.pie(status_breakdown, values='count', names='payment_status', title='Payment Status Breakdown', color='payment_status', color_discrete_map={'Paid': '#22c55e', 'Pending': '#f59e0b', 'Overdue': '#ef4444'})
                 fig_pie.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#f8fafc')
                 col4.plotly_chart(fig_pie, use_container_width=True)
+
+        # --- Page: Settings ---
+        elif page == "Settings":
+            st.title("⚙️ Portal Settings")
+            st.markdown("Update your administrative credentials.")
+            
+            with st.form("admin_settings_form"):
+                st.subheader("Edit Administrator Profile")
+                current_username = st.session_state.user['username']
+                new_username = st.text_input("Username *", value=current_username).strip()
+                
+                st.write("---")
+                st.markdown("### Update Password (Optional)")
+                new_password = st.text_input("New Password", type="password", help="Leave blank to keep current password")
+                confirm_password = st.text_input("Confirm New Password", type="password")
+                
+                submit_settings = st.form_submit_button("Save Changes", use_container_width=True)
+                
+                if submit_settings:
+                    if not new_username:
+                        st.error("Username cannot be empty.")
+                    elif new_password and new_password != confirm_password:
+                        st.error("Passwords do not match.")
+                    else:
+                        new_pwd_hash = None
+                        if new_password:
+                            import bcrypt
+                            new_pwd_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                        
+                        success, msg = database.update_username_and_password(
+                            user_id=st.session_state.user['user_id'],
+                            new_username=new_username,
+                            new_password_hash=new_pwd_hash
+                        )
+                        if success:
+                            st.success(msg)
+                            st.session_state.user['username'] = new_username
+                            st.rerun()
+                        else:
+                            st.error(msg)
 
     # ==============================================================================
     # PATIENT PORTAL FLOW
