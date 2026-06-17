@@ -298,11 +298,11 @@ def add_patient(name, age, gender, contact, email, blood_group, history):
     except Exception as e:
         return False, str(e)
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_all_patients():
     return read_dataframe("SELECT * FROM patients")
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_patient_history(patient_id):
     query = """
         SELECT a.appointment_id, a.appointment_date, d.full_name as doctor_name, 
@@ -316,7 +316,7 @@ def get_patient_history(patient_id):
     return read_dataframe(query, patient_id)
 
 # --- Doctor Database Queries ---
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=60)
 def get_all_doctors():
     return read_dataframe("SELECT * FROM doctors")
 
@@ -378,9 +378,10 @@ def auto_update_no_shows():
     except Exception as e:
         return False
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_all_appointments_detailed():
-    auto_update_no_shows()
+    # NOTE: auto_update_no_shows() is called separately in app.py at page load,
+    # NOT here, to avoid cache invalidation loops caused by writes inside a cached function.
     query = """
         SELECT a.appointment_id, a.appointment_date, a.status, a.notes,
                p.patient_id, p.full_name as patient_name, p.contact_number as patient_contact,
@@ -393,7 +394,7 @@ def get_all_appointments_detailed():
     return read_dataframe(query)
 
 # --- Payment Database Queries ---
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_all_payments_detailed():
     query = """
         SELECT pay.payment_id, pay.appointment_id, pay.amount, pay.payment_method, 
@@ -418,7 +419,7 @@ def record_payment(appointment_id, amount, method, status, payment_date):
     except Exception as e:
         return False, str(e)
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_unpaid_appointments():
     query = """
         SELECT a.appointment_id, a.appointment_date, p.full_name as patient_name, d.full_name as doctor_name
@@ -498,11 +499,11 @@ def update_patient_profile(patient_id, contact, email, medical_history):
     except Exception as e:
         return False, str(e)
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_patient_details(patient_id):
     return query_one("SELECT * FROM patients WHERE patient_id = ?", (patient_id,))
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_patient_appointments(patient_id):
     query = """
         SELECT a.appointment_id, a.appointment_date, a.status, a.notes,
@@ -514,7 +515,7 @@ def get_patient_appointments(patient_id):
     """
     return read_dataframe(query, patient_id)
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def get_patient_payments(patient_id):
     query = """
         SELECT pay.payment_id, pay.amount, pay.payment_method, pay.payment_status, pay.payment_date,

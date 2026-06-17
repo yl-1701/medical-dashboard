@@ -7,6 +7,9 @@ def show_payments_page():
     st.title("💳 Payment Records Management")
     st.markdown("Track patient payments, record transactions, and manage outstanding balances.")
 
+    # Load data once at the top — all calls use @st.cache_data so repeated reruns are near-instant
+    payments_df_all = database.get_all_payments_detailed()
+
     # Custom styling
     st.markdown("""
         <style>
@@ -31,7 +34,7 @@ def show_payments_page():
         appt_options = {}
         if unpaid_df.empty:
             st.info("No unpaid appointments found. All existing appointments have payments recorded.")
-            # Still allow selecting from all appointments if needed, or show a simple form
+            # Reuse the already-loaded payments_df_all to derive all appointments
             all_appts = database.get_all_appointments_detailed()
             if not all_appts.empty:
                 for _, row in all_appts.iterrows():
@@ -82,7 +85,7 @@ def show_payments_page():
     # 1b. Edit Existing Payment Form
     with st.expander("✏️ Edit Existing Payment", expanded=False):
         st.subheader("Edit Payment Record")
-        payments_df_edit = database.get_all_payments_detailed()
+        payments_df_edit = payments_df_all  # reuse the pre-loaded DataFrame
         if payments_df_edit.empty:
             st.info("No payment records exist to edit.")
         else:
@@ -139,7 +142,7 @@ def show_payments_page():
     # 2. Payments Table & Filters
     st.subheader("Transaction History")
     
-    payments_df = database.get_all_payments_detailed()
+    payments_df = payments_df_all  # reuse the pre-loaded DataFrame
     
     if payments_df.empty:
         st.info("No payment records found.")

@@ -304,7 +304,7 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
     if st.sidebar.button("Logout 🚪", use_container_width=True):
         auth.logout()
 
-    # Load DB tables
+    # Load DB tables — all calls are cached via @st.cache_data so repeated reruns are near-instant
     try:
         patients_df = database.get_all_patients()
         doctors_df = database.get_all_doctors()
@@ -314,6 +314,13 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
         st.error("⚠️ Database Connection Error!")
         st.exception(e)
         st.stop()
+
+    # Run no-show auto-detection once per session (not on every rerun)
+    if not st.session_state.get("_no_show_checked"):
+        database.auto_update_no_shows()
+        # If no-shows were updated, clear caches so latest data loads fresh
+        appointments_df = database.get_all_appointments_detailed()
+        st.session_state["_no_show_checked"] = True
 
     # Helper for status styling
     def style_appt_table(df):
@@ -755,7 +762,8 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                     if selected_appt_id:
                         appt_details = appointments_df[appointments_df['appointment_id'] == selected_appt_id].iloc[0]
                         
-                        doctors_list = database.get_all_doctors()
+                        # Reuse already-loaded doctors_df (cached) instead of another DB call
+                        doctors_list = doctors_df
                         doc_map = {row['full_name']: row['doctor_id'] for _, row in doctors_list.iterrows()}
                         default_doc_id = doc_map.get(appt_details['doctor_name'], None)
                         
