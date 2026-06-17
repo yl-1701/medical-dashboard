@@ -11,13 +11,16 @@ def get_raw_connection():
     if "postgres" in st.secrets:
         import psycopg2
         pg_config = st.secrets["postgres"]
-        conn = psycopg2.connect(
-            host=pg_config.get("host"),
-            database=pg_config.get("database", "postgres"),
-            user=pg_config.get("user", "postgres"),
-            password=pg_config.get("password"),
-            port=pg_config.get("port", 5432)
-        )
+        if "url" in pg_config:
+            conn = psycopg2.connect(pg_config["url"])
+        else:
+            conn = psycopg2.connect(
+                host=pg_config.get("host"),
+                database=pg_config.get("database", "postgres"),
+                user=pg_config.get("user", "postgres"),
+                password=pg_config.get("password"),
+                port=pg_config.get("port", 5432)
+            )
         return conn, True
     else:
         conn = sqlite3.connect(DB_PATH)
