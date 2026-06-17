@@ -475,8 +475,24 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                     # View History
                     st.write("---")
                     st.subheader("🔎 View Individual Patient History")
+                    
+                    search_pat_history = st.text_input("🔍 Search patient name/ID to filter list:", "", placeholder="Type patient name or ID to filter...")
+                    
                     patient_choices = {row['patient_id']: f"{row['full_name']} (ID: {row['patient_id']})" for _, row in patients_df.iterrows()}
-                    selected_pat_id = st.selectbox("Select Patient to view complete history:", options=list(patient_choices.keys()), format_func=lambda x: patient_choices[x])
+                    
+                    if search_pat_history:
+                        filtered_choices = {
+                            k: v for k, v in patient_choices.items()
+                            if search_pat_history.lower() in v.lower()
+                        }
+                    else:
+                        filtered_choices = patient_choices
+                        
+                    if not filtered_choices:
+                        st.info("No matching patients found.")
+                        selected_pat_id = None
+                    else:
+                        selected_pat_id = st.selectbox("Select Patient to view complete history:", options=list(filtered_choices.keys()), format_func=lambda x: filtered_choices[x])
                     
                     if selected_pat_id:
                         patient_info = patients_df[patients_df['patient_id'] == selected_pat_id].iloc[0]
