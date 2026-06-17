@@ -274,6 +274,18 @@ def init_db():
 # Initialize local SQLite DB if not running in PostgreSQL cloud mode
 init_db()
 
+# --- Cache Management ---
+def clear_db_caches():
+    get_all_patients.clear()
+    get_patient_history.clear()
+    get_all_doctors.clear()
+    get_all_appointments_detailed.clear()
+    get_all_payments_detailed.clear()
+    get_unpaid_appointments.clear()
+    get_patient_details.clear()
+    get_patient_appointments.clear()
+    get_patient_payments.clear()
+
 # --- Patient Database Queries ---
 def add_patient(name, age, gender, contact, email, blood_group, history):
     try:
@@ -281,13 +293,16 @@ def add_patient(name, age, gender, contact, email, blood_group, history):
             INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (name, age, gender, contact, email, blood_group, history))
+        clear_db_caches()
         return True, "Patient added successfully!"
     except Exception as e:
         return False, str(e)
 
+@st.cache_data(ttl=15)
 def get_all_patients():
     return read_dataframe("SELECT * FROM patients")
 
+@st.cache_data(ttl=15)
 def get_patient_history(patient_id):
     query = """
         SELECT a.appointment_id, a.appointment_date, d.full_name as doctor_name, 
@@ -301,6 +316,7 @@ def get_patient_history(patient_id):
     return read_dataframe(query, patient_id)
 
 # --- Doctor Database Queries ---
+@st.cache_data(ttl=15)
 def get_all_doctors():
     return read_dataframe("SELECT * FROM doctors")
 
@@ -311,6 +327,7 @@ def book_appointment(patient_id, doctor_id, appt_datetime, status, notes):
             INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes)
             VALUES (?, ?, ?, ?, ?)
         """, (patient_id, doctor_id, appt_datetime, status, notes))
+        clear_db_caches()
         return True, "Appointment booked successfully!"
     except Exception as e:
         return False, str(e)
@@ -318,6 +335,7 @@ def book_appointment(patient_id, doctor_id, appt_datetime, status, notes):
 def update_appointment_status(appointment_id, status):
     try:
         execute_write("UPDATE appointments SET status = ? WHERE appointment_id = ?", (status, appointment_id))
+        clear_db_caches()
         return True, "Appointment status updated!"
     except Exception as e:
         return False, str(e)
@@ -329,6 +347,7 @@ def update_appointment(appointment_id, doctor_id, appt_datetime, status, notes):
             SET doctor_id = ?, appointment_date = ?, status = ?, notes = ?
             WHERE appointment_id = ?
         """, (doctor_id, appt_datetime, status, notes, appointment_id))
+        clear_db_caches()
         return True, "Appointment updated successfully!"
     except Exception as e:
         return False, str(e)
@@ -338,26 +357,28 @@ def auto_update_no_shows():
     try:
         rows = query_all("SELECT appointment_id, appointment_date FROM appointments WHERE status = 'Scheduled'")
         now = datetime.now()
+        updated_any = False
         for row in rows:
             appt_id = row['appointment_id']
             appt_date_str = row['appointment_date']
             try:
-                # Format: YYYY-MM-DD HH:MM
                 appt_dt = datetime.strptime(appt_date_str, "%Y-%m-%d %H:%M")
             except ValueError:
                 try:
-                    # Fallback for YYYY-MM-DD
                     appt_dt = datetime.strptime(appt_date_str.split()[0], "%Y-%m-%d")
                 except:
                     continue
             
-            # Check if 15 minutes have passed since the slot start time
             if now > appt_dt + timedelta(minutes=15):
                 execute_write("UPDATE appointments SET status = 'No-Show' WHERE appointment_id = ?", (appt_id,))
+                updated_any = True
+        if updated_any:
+            clear_db_caches()
         return True
     except Exception as e:
         return False
 
+@st.cache_data(ttl=15)
 def get_all_appointments_detailed():
     auto_update_no_shows()
     query = """
@@ -372,6 +393,7 @@ def get_all_appointments_detailed():
     return read_dataframe(query)
 
 # --- Payment Database Queries ---
+@st.cache_data(ttl=15)
 def get_all_payments_detailed():
     query = """
         SELECT pay.payment_id, pay.appointment_id, pay.amount, pay.payment_method, 
@@ -391,10 +413,12 @@ def record_payment(appointment_id, amount, method, status, payment_date):
             INSERT INTO payments (appointment_id, amount, payment_method, payment_status, payment_date)
             VALUES (?, ?, ?, ?, ?)
         """, (appointment_id, amount, method, status, payment_date))
+        clear_db_caches()
         return True, "Payment recorded successfully!"
     except Exception as e:
         return False, str(e)
 
+@st.cache_data(ttl=15)
 def get_unpaid_appointments():
     query = """
         SELECT a.appointment_id, a.appointment_date, p.full_name as patient_name, d.full_name as doctor_name
@@ -433,6 +457,7 @@ def update_username_and_password(user_id, new_username, new_password_hash=None):
                 SET username = ?
                 WHERE user_id = ?
             """, (new_username, user_id))
+        clear_db_caches()
         return True, "Profile details updated successfully!"
     except Exception as e:
         if "UNIQUE" in str(e) or "duplicate key" in str(e).lower():
@@ -454,6 +479,7 @@ def create_user_and_patient(username, password_hash, full_name, age, gender, con
             VALUES (?, ?, ?, 'patient', ?)
         """, (patient_id, username, password_hash, created_at_str))
         
+        clear_db_caches()
         return True, "Account created successfully!"
     except Exception as e:
         if "UNIQUE" in str(e) or "duplicate key" in str(e).lower():
@@ -467,13 +493,16 @@ def update_patient_profile(patient_id, contact, email, medical_history):
             SET contact_number = ?, email = ?, medical_history = ?
             WHERE patient_id = ?
         """, (contact, email, medical_history, patient_id))
+        clear_db_caches()
         return True, "Profile updated successfully!"
     except Exception as e:
         return False, str(e)
 
+@st.cache_data(ttl=15)
 def get_patient_details(patient_id):
     return query_one("SELECT * FROM patients WHERE patient_id = ?", (patient_id,))
 
+@st.cache_data(ttl=15)
 def get_patient_appointments(patient_id):
     query = """
         SELECT a.appointment_id, a.appointment_date, a.status, a.notes,
@@ -485,6 +514,7 @@ def get_patient_appointments(patient_id):
     """
     return read_dataframe(query, patient_id)
 
+@st.cache_data(ttl=15)
 def get_patient_payments(patient_id):
     query = """
         SELECT pay.payment_id, pay.amount, pay.payment_method, pay.payment_status, pay.payment_date,
@@ -505,6 +535,7 @@ def update_patient_admin(patient_id, full_name, age, gender, contact, email, blo
             SET full_name = ?, age = ?, gender = ?, contact_number = ?, email = ?, blood_group = ?, medical_history = ?
             WHERE patient_id = ?
         """, (full_name, age, gender, contact, email, blood_group, history, patient_id))
+        clear_db_caches()
         return True, "Patient details updated successfully!"
     except Exception as e:
         return False, str(e)
@@ -516,6 +547,7 @@ def update_doctor(doctor_id, full_name, specialization, contact, availability):
             SET full_name = ?, specialization = ?, contact = ?, availability = ?
             WHERE doctor_id = ?
         """, (full_name, specialization, contact, availability, doctor_id))
+        clear_db_caches()
         return True, "Doctor details updated successfully!"
     except Exception as e:
         return False, str(e)
@@ -527,6 +559,7 @@ def update_payment(payment_id, amount, payment_method, payment_status, payment_d
             SET amount = ?, payment_method = ?, payment_status = ?, payment_date = ?
             WHERE payment_id = ?
         """, (amount, payment_method, payment_status, payment_date, payment_id))
+        clear_db_caches()
         return True, "Payment details updated successfully!"
     except Exception as e:
         return False, str(e)
@@ -543,6 +576,7 @@ def add_patient_and_book_appointment(name, age, gender, contact, email, blood_gr
             VALUES (?, ?, ?, 'Scheduled', ?)
         """, (patient_id, doctor_id, appt_datetime, notes))
         
+        clear_db_caches()
         return True, "Patient registered and appointment booked successfully!"
     except Exception as e:
         return False, str(e)
