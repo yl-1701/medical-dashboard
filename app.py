@@ -23,11 +23,26 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
     
+    /* Keyframe Animations for Fluid Premium Transitions */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideInSidebar {
+        from { opacity: 0; transform: translateX(-8px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
     /* Global Font Override & Premium Soft Cream Radial Gradient Background */
     html, body, [data-testid="stAppViewContainer"], .main {
         font-family: 'Outfit', sans-serif !important;
         background: radial-gradient(circle at 50% 0%, #fbf9f5 0%, #f5eedf 100%) !important;
         color: #2c241e !important;
+    }
+    
+    /* Apply fluid fade-in to the main content area */
+    .main .block-container {
+        animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
     }
     
     /* Title Accent */
@@ -51,6 +66,7 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         background-color: #ffffff !important;
         border-right: 1px solid #e6dfd3;
+        animation: slideInSidebar 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
     }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
         color: #2c241e !important;
