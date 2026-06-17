@@ -59,9 +59,7 @@ st.markdown("""
     h1 {
         font-family: 'Outfit', sans-serif !important;
         font-weight: 800 !important;
-        background: linear-gradient(135deg, #8c6239 0%, #5c3e21 50%, #2b1a0d 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #5c3e21 !important; /* Solid premium brown to prevent emoji masking */
         letter-spacing: -0.03em;
         animation: scaleIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
