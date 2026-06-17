@@ -2,18 +2,95 @@ import sqlite3
 import os
 import pandas as pd
 from datetime import datetime, timedelta
+import streamlit as st
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "medical.db")
 
+def get_raw_connection():
+    """Returns (connection, is_postgres)"""
+    if "postgres" in st.secrets:
+        import psycopg2
+        pg_config = st.secrets["postgres"]
+        conn = psycopg2.connect(
+            host=pg_config.get("host"),
+            database=pg_config.get("database", "postgres"),
+            user=pg_config.get("user", "postgres"),
+            password=pg_config.get("password"),
+            port=pg_config.get("port", 5432)
+        )
+        return conn, True
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn, False
+
 def get_connection():
-    """Create a database connection to the SQLite database."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    # Legacy connection fallback: returns raw connection
+    conn, is_pg = get_raw_connection()
     return conn
 
+def query_one(query, params=None):
+    conn, is_pg = get_raw_connection()
+    cursor = conn.cursor()
+    if is_pg:
+        query = query.replace("?", "%s")
+    if params is not None and not isinstance(params, (tuple, list)):
+        params = (params,)
+    cursor.execute(query, params)
+    row = cursor.fetchone()
+    if row and is_pg:
+        colnames = [desc[0] for desc in cursor.description]
+        row = dict(zip(colnames, row))
+    conn.close()
+    return row
+
+def query_all(query, params=None):
+    conn, is_pg = get_raw_connection()
+    cursor = conn.cursor()
+    if is_pg:
+        query = query.replace("?", "%s")
+    if params is not None and not isinstance(params, (tuple, list)):
+        params = (params,)
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    if is_pg:
+        colnames = [desc[0] for desc in cursor.description]
+        rows = [dict(zip(colnames, r)) for r in rows]
+    conn.close()
+    return rows
+
+def execute_write(query, params=None, returning_id=False):
+    conn, is_pg = get_raw_connection()
+    cursor = conn.cursor()
+    if is_pg:
+        query = query.replace("?", "%s")
+    if params is not None and not isinstance(params, (tuple, list)):
+        params = (params,)
+    cursor.execute(query, params)
+    result = None
+    if returning_id:
+        row = cursor.fetchone()
+        if row:
+            result = row[0]
+    conn.commit()
+    conn.close()
+    return result
+
+def read_dataframe(query, params=None):
+    conn, is_pg = get_raw_connection()
+    if is_pg:
+        query = query.replace("?", "%s")
+    if params is not None and not isinstance(params, (tuple, list)):
+        params = (params,)
+    df = pd.read_sql_query(query, conn, params=params)
+    conn.close()
+    return df
+
 def init_db():
-    """Initialize the database with tables and sample data if empty."""
-    conn = get_connection()
+    """Initialize the database locally if empty. Skipped if postgres cloud mode is active."""
+    if "postgres" in st.secrets:
+        return
+    conn, is_pg = get_raw_connection()
     cursor = conn.cursor()
 
     # Create Patients table
@@ -169,32 +246,24 @@ def init_db():
     
     conn.close()
 
-# Initialize DB on import
+# Initialize local SQLite DB if not running in PostgreSQL cloud mode
 init_db()
 
 # --- Patient Database Queries ---
 def add_patient(name, age, gender, contact, email, blood_group, history):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (name, age, gender, contact, email, blood_group, history))
-        conn.commit()
-        conn.close()
         return True, "Patient added successfully!"
     except Exception as e:
         return False, str(e)
 
 def get_all_patients():
-    conn = get_connection()
-    df = pd.read_sql_query("SELECT * FROM patients", conn)
-    conn.close()
-    return df
+    return read_dataframe("SELECT * FROM patients")
 
 def get_patient_history(patient_id):
-    conn = get_connection()
     query = """
         SELECT a.appointment_id, a.appointment_date, d.full_name as doctor_name, 
                d.specialization, a.status, a.notes, p.amount, p.payment_status
@@ -204,54 +273,37 @@ def get_patient_history(patient_id):
         WHERE a.patient_id = ?
         ORDER BY a.appointment_date DESC
     """
-    df = pd.read_sql_query(query, conn, params=(patient_id,))
-    conn.close()
-    return df
+    return read_dataframe(query, patient_id)
 
 # --- Doctor Database Queries ---
 def get_all_doctors():
-    conn = get_connection()
-    df = pd.read_sql_query("SELECT * FROM doctors", conn)
-    conn.close()
-    return df
+    return read_dataframe("SELECT * FROM doctors")
 
 # --- Appointment Database Queries ---
 def book_appointment(patient_id, doctor_id, appt_datetime, status, notes):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes)
             VALUES (?, ?, ?, ?, ?)
         """, (patient_id, doctor_id, appt_datetime, status, notes))
-        conn.commit()
-        conn.close()
         return True, "Appointment booked successfully!"
     except Exception as e:
         return False, str(e)
 
 def update_appointment_status(appointment_id, status):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE appointments SET status = ? WHERE appointment_id = ?", (status, appointment_id))
-        conn.commit()
-        conn.close()
+        execute_write("UPDATE appointments SET status = ? WHERE appointment_id = ?", (status, appointment_id))
         return True, "Appointment status updated!"
     except Exception as e:
         return False, str(e)
 
 def update_appointment(appointment_id, doctor_id, appt_datetime, status, notes):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             UPDATE appointments
             SET doctor_id = ?, appointment_date = ?, status = ?, notes = ?
             WHERE appointment_id = ?
         """, (doctor_id, appt_datetime, status, notes, appointment_id))
-        conn.commit()
-        conn.close()
         return True, "Appointment updated successfully!"
     except Exception as e:
         return False, str(e)
@@ -259,16 +311,8 @@ def update_appointment(appointment_id, doctor_id, appt_datetime, status, notes):
 def auto_update_no_shows():
     """Automatically update Scheduled appointments to No-Show if they are past 15 minutes of slot time."""
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # Get all Scheduled appointments
-        cursor.execute("SELECT appointment_id, appointment_date FROM appointments WHERE status = 'Scheduled'")
-        rows = cursor.fetchall()
-        
+        rows = query_all("SELECT appointment_id, appointment_date FROM appointments WHERE status = 'Scheduled'")
         now = datetime.now()
-        updated_any = False
-        
         for row in rows:
             appt_id = row['appointment_id']
             appt_date_str = row['appointment_date']
@@ -284,19 +328,13 @@ def auto_update_no_shows():
             
             # Check if 15 minutes have passed since the slot start time
             if now > appt_dt + timedelta(minutes=15):
-                cursor.execute("UPDATE appointments SET status = 'No-Show' WHERE appointment_id = ?", (appt_id,))
-                updated_any = True
-                
-        if updated_any:
-            conn.commit()
-        conn.close()
+                execute_write("UPDATE appointments SET status = 'No-Show' WHERE appointment_id = ?", (appt_id,))
         return True
     except Exception as e:
         return False
 
 def get_all_appointments_detailed():
     auto_update_no_shows()
-    conn = get_connection()
     query = """
         SELECT a.appointment_id, a.appointment_date, a.status, a.notes,
                p.patient_id, p.full_name as patient_name, p.contact_number as patient_contact,
@@ -306,14 +344,10 @@ def get_all_appointments_detailed():
         JOIN doctors d ON a.doctor_id = d.doctor_id
         ORDER BY a.appointment_date DESC
     """
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    return df
-
+    return read_dataframe(query)
 
 # --- Payment Database Queries ---
 def get_all_payments_detailed():
-    conn = get_connection()
     query = """
         SELECT pay.payment_id, pay.appointment_id, pay.amount, pay.payment_method, 
                pay.payment_status, pay.payment_date,
@@ -324,27 +358,19 @@ def get_all_payments_detailed():
         JOIN doctors d ON a.doctor_id = d.doctor_id
         ORDER BY pay.payment_id DESC
     """
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    return df
+    return read_dataframe(query)
 
 def record_payment(appointment_id, amount, method, status, payment_date):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             INSERT INTO payments (appointment_id, amount, payment_method, payment_status, payment_date)
             VALUES (?, ?, ?, ?, ?)
         """, (appointment_id, amount, method, status, payment_date))
-        conn.commit()
-        conn.close()
         return True, "Payment recorded successfully!"
     except Exception as e:
         return False, str(e)
 
 def get_unpaid_appointments():
-    conn = get_connection()
-    # Find appointments that do not have a payment associated with them
     query = """
         SELECT a.appointment_id, a.appointment_date, p.full_name as patient_name, d.full_name as doctor_name
         FROM appointments a
@@ -354,111 +380,76 @@ def get_unpaid_appointments():
         WHERE pay.payment_id IS NULL
         ORDER BY a.appointment_date DESC
     """
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    return df
+    return read_dataframe(query)
 
 # --- Auth and Patient Profile Database Queries ---
 def get_user_by_username(username):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-    conn.close()
-    if user:
-        return dict(user)
-    return None
+    row = query_one("SELECT * FROM users WHERE username = ?", (username,))
+    return row
 
 def update_last_login(user_id, time_str):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE users SET last_login = ? WHERE user_id = ?", (time_str, user_id))
-        conn.commit()
-        conn.close()
+        execute_write("UPDATE users SET last_login = ? WHERE user_id = ?", (time_str, user_id))
         return True
     except Exception as e:
         return False
 
 def update_username_and_password(user_id, new_username, new_password_hash=None):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
         if new_password_hash:
-            cursor.execute("""
+            execute_write("""
                 UPDATE users
                 SET username = ?, password_hash = ?
                 WHERE user_id = ?
             """, (new_username, new_password_hash, user_id))
         else:
-            cursor.execute("""
+            execute_write("""
                 UPDATE users
                 SET username = ?
                 WHERE user_id = ?
             """, (new_username, user_id))
-        conn.commit()
-        conn.close()
         return True, "Profile details updated successfully!"
-    except sqlite3.IntegrityError:
-        return False, "Username already exists. Please choose a different one."
     except Exception as e:
+        if "UNIQUE" in str(e) or "duplicate key" in str(e).lower():
+            return False, "Username already exists. Please choose a different one."
         return False, str(e)
-
 
 def create_user_and_patient(username, password_hash, full_name, age, gender, contact, email, blood_group, medical_history):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # 1. Insert patient
-        cursor.execute("""
+        # 1. Insert patient and fetch new ID
+        patient_id = execute_write("""
             INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (full_name, age, gender, contact, email, blood_group, medical_history))
-        patient_id = cursor.lastrowid
+            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING patient_id
+        """, (full_name, age, gender, contact, email, blood_group, medical_history), returning_id=True)
         
         # 2. Insert user mapping to patient
         created_at_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("""
+        execute_write("""
             INSERT INTO users (patient_id, username, password_hash, role, created_at)
             VALUES (?, ?, ?, 'patient', ?)
         """, (patient_id, username, password_hash, created_at_str))
         
-        conn.commit()
-        conn.close()
         return True, "Account created successfully!"
-    except sqlite3.IntegrityError:
-        return False, "Username already exists. Please choose a different one."
     except Exception as e:
+        if "UNIQUE" in str(e) or "duplicate key" in str(e).lower():
+            return False, "Username already exists. Please choose a different one."
         return False, str(e)
 
 def update_patient_profile(patient_id, contact, email, medical_history):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             UPDATE patients
             SET contact_number = ?, email = ?, medical_history = ?
             WHERE patient_id = ?
         """, (contact, email, medical_history, patient_id))
-        conn.commit()
-        conn.close()
         return True, "Profile updated successfully!"
     except Exception as e:
         return False, str(e)
 
 def get_patient_details(patient_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM patients WHERE patient_id = ?", (patient_id,))
-    patient = cursor.fetchone()
-    conn.close()
-    if patient:
-        return dict(patient)
-    return None
+    return query_one("SELECT * FROM patients WHERE patient_id = ?", (patient_id,))
 
 def get_patient_appointments(patient_id):
-    conn = get_connection()
     query = """
         SELECT a.appointment_id, a.appointment_date, a.status, a.notes,
                d.full_name as doctor_name, d.specialization
@@ -467,12 +458,9 @@ def get_patient_appointments(patient_id):
         WHERE a.patient_id = ?
         ORDER BY a.appointment_date DESC
     """
-    df = pd.read_sql_query(query, conn, params=(patient_id,))
-    conn.close()
-    return df
+    return read_dataframe(query, patient_id)
 
 def get_patient_payments(patient_id):
-    conn = get_connection()
     query = """
         SELECT pay.payment_id, pay.amount, pay.payment_method, pay.payment_status, pay.payment_date,
                a.appointment_date, d.full_name as doctor_name
@@ -482,75 +470,54 @@ def get_patient_payments(patient_id):
         WHERE a.patient_id = ?
         ORDER BY pay.payment_id DESC
     """
-    df = pd.read_sql_query(query, conn, params=(patient_id,))
-    conn.close()
-    return df
+    return read_dataframe(query, patient_id)
 
 # --- Admin CRUD Update Operations ---
 def update_patient_admin(patient_id, full_name, age, gender, contact, email, blood_group, history):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             UPDATE patients
             SET full_name = ?, age = ?, gender = ?, contact_number = ?, email = ?, blood_group = ?, medical_history = ?
             WHERE patient_id = ?
         """, (full_name, age, gender, contact, email, blood_group, history, patient_id))
-        conn.commit()
-        conn.close()
         return True, "Patient details updated successfully!"
     except Exception as e:
         return False, str(e)
 
 def update_doctor(doctor_id, full_name, specialization, contact, availability):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             UPDATE doctors
             SET full_name = ?, specialization = ?, contact = ?, availability = ?
             WHERE doctor_id = ?
         """, (full_name, specialization, contact, availability, doctor_id))
-        conn.commit()
-        conn.close()
         return True, "Doctor details updated successfully!"
     except Exception as e:
         return False, str(e)
 
 def update_payment(payment_id, amount, payment_method, payment_status, payment_date):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        execute_write("""
             UPDATE payments
             SET amount = ?, payment_method = ?, payment_status = ?, payment_date = ?
             WHERE payment_id = ?
         """, (amount, payment_method, payment_status, payment_date, payment_id))
-        conn.commit()
-        conn.close()
         return True, "Payment details updated successfully!"
     except Exception as e:
         return False, str(e)
 
 def add_patient_and_book_appointment(name, age, gender, contact, email, blood_group, history, doctor_id, appt_datetime, notes):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
+        patient_id = execute_write("""
             INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (name, age, gender, contact, email, blood_group, history))
-        patient_id = cursor.lastrowid
+            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING patient_id
+        """, (name, age, gender, contact, email, blood_group, history), returning_id=True)
         
-        cursor.execute("""
+        execute_write("""
             INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes)
             VALUES (?, ?, ?, 'Scheduled', ?)
         """, (patient_id, doctor_id, appt_datetime, notes))
         
-        conn.commit()
-        conn.close()
         return True, "Patient registered and appointment booked successfully!"
     except Exception as e:
         return False, str(e)
-
-
