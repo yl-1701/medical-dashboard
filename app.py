@@ -231,15 +231,20 @@ st.markdown("""
 # 1. Enforce Authentication Gate
 auth.check_inactivity_timeout()
 
+login_placeholder = st.empty()
+
 if "authenticated" not in st.session_state or not st.session_state.authenticated:
-    if "auth_page" not in st.session_state:
-        st.session_state.auth_page = "login"
-    
-    if st.session_state.auth_page == "login":
-        auth.show_login_screen()
-    else:
-        auth.show_register_screen()
+    with login_placeholder.container():
+        if "auth_page" not in st.session_state:
+            st.session_state.auth_page = "login"
+        
+        if st.session_state.auth_page == "login":
+            auth.show_login_screen()
+        else:
+            auth.show_register_screen()
     st.stop()
+else:
+    login_placeholder.empty()
 
 # 2. Main Authenticated Dashboard Layout
 if "authenticated" in st.session_state and st.session_state.authenticated:

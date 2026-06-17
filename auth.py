@@ -6,7 +6,7 @@ import database
 
 def hash_password(password: str) -> str:
     """Hash password using bcrypt."""
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=4)).decode('utf-8')
 
 def verify_password(password: str, hashed: str) -> bool:
     """Verify a password against its hashed value."""
@@ -76,7 +76,6 @@ def show_login_screen():
                     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     database.update_last_login(user['user_id'], now_str)
                     
-                    st.success("Successfully logged in!")
                     st.rerun()
                 else:
                     # Generic error for security
