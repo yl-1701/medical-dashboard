@@ -289,10 +289,15 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
         auth.logout()
 
     # Load DB tables
-    patients_df = database.get_all_patients()
-    doctors_df = database.get_all_doctors()
-    appointments_df = database.get_all_appointments_detailed()
-    payments_df = database.get_all_payments_detailed()
+    try:
+        patients_df = database.get_all_patients()
+        doctors_df = database.get_all_doctors()
+        appointments_df = database.get_all_appointments_detailed()
+        payments_df = database.get_all_payments_detailed()
+    except Exception as e:
+        st.error("⚠️ Database Connection Error!")
+        st.exception(e)
+        st.stop()
 
     # Helper for status styling
     def style_appt_table(df):

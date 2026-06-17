@@ -6,11 +6,24 @@ import streamlit as st
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "medical.db")
 
+_connection_holder = {}
+
 def get_raw_connection():
     """Returns (connection, is_postgres)"""
     if "postgres" in st.secrets:
         import psycopg2
         pg_config = st.secrets["postgres"]
+        
+        # Reuse active cached connection if available
+        conn = _connection_holder.get("pg_conn")
+        if conn is not None:
+            try:
+                if not conn.closed:
+                    return conn, True
+            except Exception:
+                pass
+                
+        # Establish new connection if none cached or it was closed
         if "url" in pg_config:
             conn = psycopg2.connect(pg_config["url"])
         else:
@@ -22,6 +35,7 @@ def get_raw_connection():
                 port=pg_config.get("port", 5432),
                 sslmode='require'
             )
+        _connection_holder["pg_conn"] = conn
         return conn, True
     else:
         conn = sqlite3.connect(DB_PATH)
@@ -45,7 +59,9 @@ def query_one(query, params=None):
     if row and is_pg:
         colnames = [desc[0] for desc in cursor.description]
         row = dict(zip(colnames, row))
-    conn.close()
+    cursor.close()
+    if not is_pg:
+        conn.close()
     return row
 
 def query_all(query, params=None):
@@ -60,7 +76,9 @@ def query_all(query, params=None):
     if is_pg:
         colnames = [desc[0] for desc in cursor.description]
         rows = [dict(zip(colnames, r)) for r in rows]
-    conn.close()
+    cursor.close()
+    if not is_pg:
+        conn.close()
     return rows
 
 def execute_write(query, params=None, returning_id=False):
@@ -77,7 +95,9 @@ def execute_write(query, params=None, returning_id=False):
         if row:
             result = row[0]
     conn.commit()
-    conn.close()
+    cursor.close()
+    if not is_pg:
+        conn.close()
     return result
 
 def read_dataframe(query, params=None):
@@ -87,7 +107,8 @@ def read_dataframe(query, params=None):
     if params is not None and not isinstance(params, (tuple, list)):
         params = (params,)
     df = pd.read_sql_query(query, conn, params=params)
-    conn.close()
+    if not is_pg:
+        conn.close()
     return df
 
 def init_db():
