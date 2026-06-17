@@ -19,7 +19,8 @@ def get_raw_connection():
                 database=pg_config.get("database", "postgres"),
                 user=pg_config.get("user", "postgres"),
                 password=pg_config.get("password"),
-                port=pg_config.get("port", 5432)
+                port=pg_config.get("port", 5432),
+                sslmode='require'
             )
         return conn, True
     else:
