@@ -10,7 +10,13 @@ _connection_holder = {}
 
 def get_raw_connection():
     """Returns (connection, is_postgres)"""
-    if "postgres" in st.secrets:
+    has_postgres = False
+    try:
+        has_postgres = "postgres" in st.secrets
+    except Exception:
+        pass
+
+    if has_postgres:
         import psycopg2
         pg_config = st.secrets["postgres"]
         
@@ -112,16 +118,17 @@ def read_dataframe(query, params=None):
     return df
 
 def init_db():
-    """Initialize the database locally if empty. Skipped if postgres cloud mode is active."""
-    if "postgres" in st.secrets:
-        return
+    """Initialize the database tables and seed mock data if empty (supports both SQLite and PostgreSQL)."""
     conn, is_pg = get_raw_connection()
     cursor = conn.cursor()
+    
+    # In PostgreSQL, AUTOINCREMENT is SERIAL PRIMARY KEY
+    pk_str = "SERIAL PRIMARY KEY" if is_pg else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
     # Create Patients table
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS patients (
-        patient_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id {pk_str},
         full_name TEXT NOT NULL,
         age INTEGER,
         gender TEXT,
@@ -133,9 +140,9 @@ def init_db():
     """)
 
     # Create Doctors table
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS doctors (
-        doctor_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        doctor_id {pk_str},
         full_name TEXT NOT NULL,
         specialization TEXT NOT NULL,
         contact TEXT,
@@ -144,9 +151,9 @@ def init_db():
     """)
 
     # Create Appointments table
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS appointments (
-        appointment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        appointment_id {pk_str},
         patient_id INTEGER,
         doctor_id INTEGER,
         appointment_date TEXT, -- YYYY-MM-DD HH:MM
@@ -158,9 +165,9 @@ def init_db():
     """)
 
     # Create Payments table
-    cursor.execute("""
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS payments (
-        payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id {pk_str},
         appointment_id INTEGER,
         amount REAL,
         payment_method TEXT, -- Cash, Card, UPI
@@ -170,11 +177,11 @@ def init_db():
     )
     """)
 
-    # Create Users table
-    cursor.execute("""
+    # Create Users table (SQLite uses NULLABLE, PG just uses NULL or nothing. Standard SQL allows omitting NOT NULL)
+    cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patient_id INTEGER NULLABLE,
+        user_id {pk_str},
+        patient_id INTEGER,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL, -- admin, patient
@@ -185,6 +192,9 @@ def init_db():
     """)
 
     conn.commit()
+    
+    # Helper for placeholders
+    ph = "%s" if is_pg else "?"
 
     # Check if doctors already exist to decide whether to populate mock data
     cursor.execute("SELECT COUNT(*) FROM doctors")
@@ -195,7 +205,7 @@ def init_db():
             ("Dr. Bob Jones", "Pediatrics", "+1-555-0188", "Tue, Thu (10 AM - 4 PM)"),
             ("Dr. Carol Vance", "Dermatology", "+1-555-0177", "Mon-Thu (1 PM - 6 PM)")
         ]
-        cursor.executemany("INSERT INTO doctors (full_name, specialization, contact, availability) VALUES (?, ?, ?, ?)", doctors)
+        cursor.executemany(f"INSERT INTO doctors (full_name, specialization, contact, availability) VALUES ({ph}, {ph}, {ph}, {ph})", doctors)
 
         # Pre-populate sample patients (at least 5)
         patients = [
@@ -205,7 +215,7 @@ def init_db():
             ("Emily Davis", 62, "Female", "+1-555-0444", "emily.d@example.com", "AB+", "Osteoarthritis in left knee"),
             ("Michael Brown", 8, "Male", "+1-555-0555", "m.brown@example.com", "O+", "Pre-existing eczema")
         ]
-        cursor.executemany("INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history) VALUES (?, ?, ?, ?, ?, ?, ?)", patients)
+        cursor.executemany(f"INSERT INTO patients (full_name, age, gender, contact_number, email, blood_group, medical_history) VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph})", patients)
         
         # Pre-populate sample appointments (at least 10)
         today = datetime.now()
@@ -227,7 +237,7 @@ def init_db():
             (5, 2, f"{tomorrow_str} 11:00", "Scheduled", "Child vaccination check."),
             (4, 1, f"{next_week_str} 09:00", "Scheduled", "Regular checkup.")
         ]
-        cursor.executemany("INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes) VALUES (?, ?, ?, ?, ?)", appointments)
+        cursor.executemany(f"INSERT INTO appointments (patient_id, doctor_id, appointment_date, status, notes) VALUES ({ph}, {ph}, {ph}, {ph}, {ph})", appointments)
 
         # Pre-populate sample payments (at least 8)
         payments = [
@@ -240,7 +250,7 @@ def init_db():
             (7, 100.0, "UPI", "Pending", ""),
             (8, 200.0, "Card", "Overdue", "")
         ]
-        cursor.executemany("INSERT INTO payments (appointment_id, amount, payment_method, payment_status, payment_date) VALUES (?, ?, ?, ?, ?)", payments)
+        cursor.executemany(f"INSERT INTO payments (appointment_id, amount, payment_method, payment_status, payment_date) VALUES ({ph}, {ph}, {ph}, {ph}, {ph})", payments)
         
         conn.commit()
 
@@ -252,9 +262,9 @@ def init_db():
         patient_pwd_hash = bcrypt.hashpw(b"Patient@1234", bcrypt.gensalt()).decode('utf-8')
         
         created_at_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("""
+        cursor.execute(f"""
             INSERT INTO users (patient_id, username, password_hash, role, created_at)
-            VALUES (NULL, 'admin', ?, 'admin', ?)
+            VALUES (NULL, 'admin', {ph}, 'admin', {ph})
         """, (admin_pwd_hash, created_at_str))
         
         # Check if John Doe (patient_id = 1) exists, otherwise default to NULL
@@ -262,14 +272,16 @@ def init_db():
         has_pat_1 = cursor.fetchone()
         pid = 1 if has_pat_1 else None
         
-        cursor.execute("""
+        cursor.execute(f"""
             INSERT INTO users (patient_id, username, password_hash, role, created_at)
-            VALUES (?, 'patient1', ?, 'patient', ?)
+            VALUES ({ph}, 'patient1', {ph}, 'patient', {ph})
         """, (pid, patient_pwd_hash, created_at_str))
         
         conn.commit()
     
-    conn.close()
+    # Close the local SQLite connection only. Leave the cached global Postgres connection open.
+    if not is_pg:
+        conn.close()
 
 # Initialize local SQLite DB if not running in PostgreSQL cloud mode
 init_db()
