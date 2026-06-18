@@ -255,7 +255,6 @@ st.markdown("""
         border: 1px solid #eae2d5 !important;
         border-radius: 12px !important;
         box-shadow: 0 8px 24px rgba(44, 37, 30, 0.1) !important;
-        animation: scaleIn 0.16s cubic-bezier(0.22, 1, 0.36, 1) !important;
     }
     li[role="option"], div[role="option"],
     [data-baseweb="menu"] li, [data-baseweb="popover"] li {
