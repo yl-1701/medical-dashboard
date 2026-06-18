@@ -640,7 +640,7 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                                             database.update_appointment_status(row['appointment_id'], next_status)
                                             st.rerun()
                                 else:
-                                    # Terminal status — show a colored badge instead of a plain dropdown
+                                    # Terminal status — show colored badge + editable dropdown below
                                     badge_colors = {
                                         'Completed': ('#e8f5e9', '#2e7d32', '✅'),
                                         'Cancelled': ('#fce4ec', '#c62828', '🚫'),
@@ -651,17 +651,35 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                                         <div style="
                                             background: {bg}; 
                                             color: {fg}; 
-                                            padding: 8px 14px; 
+                                            padding: 6px 12px; 
                                             border-radius: 10px; 
                                             font-weight: 700; 
-                                            font-size: 13px; 
+                                            font-size: 12px; 
                                             text-align: center;
                                             border: 1.5px solid {fg}22;
                                             letter-spacing: 0.03em;
+                                            margin-bottom: 6px;
                                         ">
                                             {icon} {row['status'].upper()}
                                         </div>
                                     """, unsafe_allow_html=True)
+                                    
+                                    # Allow changing back if patient arrives late
+                                    all_states = ["Scheduled", "Checked-In", "In Consultation", "Completed", "Cancelled", "No-Show"]
+                                    try:
+                                        curr_idx = all_states.index(row['status'])
+                                    except ValueError:
+                                        curr_idx = 0
+                                    new_state = st.selectbox(
+                                        "Change Status",
+                                        options=all_states,
+                                        index=curr_idx,
+                                        key=f"status_sel_{row['appointment_id']}",
+                                        label_visibility="collapsed"
+                                    )
+                                    if new_state != row['status']:
+                                        database.update_appointment_status(row['appointment_id'], new_state)
+                                        st.rerun()
                         st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
                     
             with col_right:
