@@ -495,8 +495,12 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
             </div>
         </div>
     """, unsafe_allow_html=True)
+    from datetime import datetime
+    current_date = datetime.now().strftime("%A, %b %d, %Y")
+    
     st.sidebar.markdown(f"👤 **Welcome, {st.session_state.user['username']}**")
-    st.sidebar.markdown(f"🔑 *Role: {user_role.capitalize()}*")
+    st.sidebar.markdown(f"🛡️ *Role: {user_role.capitalize()}*")
+    st.sidebar.markdown(f"📅 **Date: {current_date}**")
     st.sidebar.write("---")
 
     if user_role == "admin":
