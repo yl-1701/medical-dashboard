@@ -1043,6 +1043,23 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
         # --- Page: Analytics ---
         elif page == "Analytics":
             st.title("📊 Clinical & Financial Analytics")
+            
+            # KPI Cards at the top
+            if not payments_df.empty and not appointments_df.empty:
+                total_rev = payments_df[payments_df['payment_status'] == 'Paid']['amount'].sum()
+                outstanding = payments_df[payments_df['payment_status'].isin(['Pending', 'Overdue'])]['amount'].sum()
+                total_appts = len(appointments_df)
+                
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown(f'<div class="kpi-card"><div class="kpi-title">Total Revenue</div><div class="kpi-value">${total_rev:,.2f}</div></div>', unsafe_allow_html=True)
+                with c2:
+                    st.markdown(f'<div class="kpi-card"><div class="kpi-title">Outstanding Balances</div><div class="kpi-value" style="color: #d69e4e;">${outstanding:,.2f}</div></div>', unsafe_allow_html=True)
+                with c3:
+                    st.markdown(f'<div class="kpi-card"><div class="kpi-title">Total Lifetime Appointments</div><div class="kpi-value">{total_appts}</div></div>', unsafe_allow_html=True)
+                
+                st.write("---")
+
             col1, col2 = st.columns(2)
             
             if not appointments_df.empty:
@@ -1056,13 +1073,13 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                 appointments_df['month'] = appointments_df['appointment_date'].apply(to_month)
                 
                 appt_months = appointments_df.groupby('month').size().reset_index(name='appointments')
-                fig_appt_month = px.bar(appt_months, x='month', y='appointments', title='Appointments per Month', color_discrete_sequence=['#3b82f6'])
-                fig_appt_month.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#f8fafc')
+                fig_appt_month = px.bar(appt_months, x='month', y='appointments', title='Appointments per Month', color_discrete_sequence=['#8c6239'])
+                fig_appt_month.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#2c241e')
                 col1.plotly_chart(fig_appt_month, use_container_width=True)
                 
                 visit_counts = appointments_df.groupby('doctor_name').size().reset_index(name='visits')
-                fig_doc = px.bar(visit_counts.sort_values(by='visits', ascending=True), y='doctor_name', x='visits', orientation='h', title='Most Visited Doctors', color_discrete_sequence=['#10b981'])
-                fig_doc.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#f8fafc')
+                fig_doc = px.bar(visit_counts.sort_values(by='visits', ascending=True), y='doctor_name', x='visits', orientation='h', title='Most Visited Doctors', color_discrete_sequence=['#c5a880'])
+                fig_doc.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#2c241e')
                 col2.plotly_chart(fig_doc, use_container_width=True)
             else:
                 col1.info("No data for charts.")
@@ -1076,13 +1093,13 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                     paid_payments['revenue_month'] = paid_payments['date'].dt.strftime("%b %Y")
                     revenue_over_time = paid_payments.groupby('revenue_month')['amount'].sum().reset_index(name='revenue')
                     
-                    fig_rev = px.line(revenue_over_time, x='revenue_month', y='revenue', title='Revenue Over Time ($)', markers=True, color_discrete_sequence=['#6366f1'])
-                    fig_rev.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#f8fafc')
+                    fig_rev = px.line(revenue_over_time, x='revenue_month', y='revenue', title='Revenue Over Time ($)', markers=True, color_discrete_sequence=['#5c3e21'])
+                    fig_rev.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#2c241e')
                     col3.plotly_chart(fig_rev, use_container_width=True)
                 
                 status_breakdown = payments_df.groupby('payment_status').size().reset_index(name='count')
-                fig_pie = px.pie(status_breakdown, values='count', names='payment_status', title='Payment Status Breakdown', color='payment_status', color_discrete_map={'Paid': '#22c55e', 'Pending': '#f59e0b', 'Overdue': '#ef4444'})
-                fig_pie.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#f8fafc')
+                fig_pie = px.pie(status_breakdown, values='count', names='payment_status', title='Payment Status Breakdown', color='payment_status', color_discrete_map={'Paid': '#789c72', 'Pending': '#d69e4e', 'Overdue': '#a34a4a'})
+                fig_pie.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='#2c241e')
                 col4.plotly_chart(fig_pie, use_container_width=True)
 
         # --- Page: Settings ---
