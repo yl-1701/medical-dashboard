@@ -633,28 +633,35 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                                 elif row['status'] == 'In Consultation':
                                     next_statuses = [('Completed', '✅ Complete Visit')]
                                 
-                                cols = st.columns(max(len(next_statuses), 1))
-                                for i, (next_status, label) in enumerate(next_statuses):
-                                    if cols[i].button(label, key=f"status_btn_{row['appointment_id']}_{next_status}"):
-                                        database.update_appointment_status(row['appointment_id'], next_status)
-                                        st.rerun()
-                                        
-                                if not next_statuses:
-                                    all_states = ["Scheduled", "Checked-In", "In Consultation", "Completed", "Cancelled", "No-Show"]
-                                    try:
-                                        curr_idx = all_states.index(row['status'])
-                                    except ValueError:
-                                        curr_idx = 0
-                                    new_state = cols[0].selectbox(
-                                        "Change Status",
-                                        options=all_states,
-                                        index=curr_idx,
-                                        key=f"status_sel_{row['appointment_id']}",
-                                        label_visibility="collapsed"
-                                    )
-                                    if new_state != row['status']:
-                                        database.update_appointment_status(row['appointment_id'], new_state)
-                                        st.rerun()
+                                if next_statuses:
+                                    cols = st.columns(len(next_statuses))
+                                    for i, (next_status, label) in enumerate(next_statuses):
+                                        if cols[i].button(label, key=f"status_btn_{row['appointment_id']}_{next_status}"):
+                                            database.update_appointment_status(row['appointment_id'], next_status)
+                                            st.rerun()
+                                else:
+                                    # Terminal status — show a colored badge instead of a plain dropdown
+                                    badge_colors = {
+                                        'Completed': ('#e8f5e9', '#2e7d32', '✅'),
+                                        'Cancelled': ('#fce4ec', '#c62828', '🚫'),
+                                        'No-Show':   ('#f3e5f5', '#6a1b9a', '👻')
+                                    }
+                                    bg, fg, icon = badge_colors.get(row['status'], ('#f5f5f5', '#616161', '●'))
+                                    st.markdown(f"""
+                                        <div style="
+                                            background: {bg}; 
+                                            color: {fg}; 
+                                            padding: 8px 14px; 
+                                            border-radius: 10px; 
+                                            font-weight: 700; 
+                                            font-size: 13px; 
+                                            text-align: center;
+                                            border: 1.5px solid {fg}22;
+                                            letter-spacing: 0.03em;
+                                        ">
+                                            {icon} {row['status'].upper()}
+                                        </div>
+                                    """, unsafe_allow_html=True)
                         st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
                     
             with col_right:
