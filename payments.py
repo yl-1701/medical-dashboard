@@ -10,20 +10,6 @@ def show_payments_page():
     # Load data once at the top — all calls use @st.cache_data so repeated reruns are near-instant
     payments_df_all = database.get_all_payments_detailed()
 
-    # Custom styling
-    st.markdown("""
-        <style>
-        .metric-card {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            color: white;
-            text-align: center;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
     # 1. Record New Payment Form
     with st.expander("➕ Record New Payment", expanded=False):
         st.subheader("New Payment Transaction")

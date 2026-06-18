@@ -7,8 +7,7 @@ import payments
 import auth
 import os
 
-with open(os.path.join(os.path.dirname(__file__), "running.log"), "w") as f:
-    f.write(f"Active app.py loaded at {datetime.now()} from {__file__}\n")
+# App loaded successfully
 
 # Page configuration
 st.set_page_config(
@@ -481,16 +480,16 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
             display: flex; 
             align-items: center; 
             gap: 12px; 
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); 
+            background: linear-gradient(135deg, #9b6f45 0%, #5c3e21 100%); 
             padding: 12px 16px; 
             border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            box-shadow: 0 4px 12px rgba(92, 62, 33, 0.25); 
             margin-bottom: 20px;
         ">
-            <span style="font-size: 28px; color: white;">🏥</span>
+            <span style="font-size: 28px;">🏥</span>
             <div>
-                <h2 style="margin: 0; font-size: 18px; color: white; font-weight: 700; line-height: 1.2; border-bottom: none;">MediCare</h2>
-                <span style="font-size: 11px; color: #93c5fd; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Hub Portal</span>
+                <h2 style="margin: 0; font-size: 18px; color: #ffffff; font-weight: 700; line-height: 1.2; border-bottom: none;">MediCare</h2>
+                <span style="font-size: 11px; color: #e8d5be; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Clinic Dashboard</span>
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -961,8 +960,12 @@ if "authenticated" in st.session_state and st.session_state.authenticated:
                 if appointments_df.empty:
                     st.info("No appointments exist to edit.")
                 else:
+                    def _fmt_appt(row):
+                        doc = row['doctor_name']
+                        doc_str = doc if doc.lower().startswith('dr.') else f"Dr. {doc}"
+                        return f"ID: {row['appointment_id']} - {row['patient_name']} ({doc_str}) on {row['appointment_date']} [{row['status']}]"
                     appt_choices = {
-                        row['appointment_id']: f"ID: {row['appointment_id']} - {row['patient_name']} (Dr. {row['doctor_name']}) on {row['appointment_date']} [{row['status']}]"
+                        row['appointment_id']: _fmt_appt(row)
                         for _, row in appointments_df.iterrows()
                     }
                     
